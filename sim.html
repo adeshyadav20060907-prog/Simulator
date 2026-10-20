@@ -1,0 +1,637 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrix Transformation Simulator</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0b1220;
+  color: #e5e7eb;
+}
+
+header {
+  padding: 24px;
+  text-align: center;
+  background: #111c30;
+  border-bottom: 1px solid #334155;
+}
+
+h1 { margin: 0 0 8px; }
+h2 { font-size: 19px; margin-top: 0; }
+
+.subtitle { color: #94a3b8; }
+
+.container {
+  max-width: 1150px;
+  margin: auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 330px 1fr;
+  gap: 20px;
+}
+
+.card {
+  background: #172338;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.matrix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-width: 230px;
+  margin: 16px auto;
+}
+
+input[type=number] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #0b1220;
+  color: white;
+  font-size: 18px;
+  text-align: center;
+}
+
+input[type=range] {
+  width: 100%;
+  accent-color: #38bdf8;
+}
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+button {
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 12px;
+  background: #24334d;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover { background: #334b6e; }
+
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.reset {
+  width: 100%;
+  background: #2563eb;
+  margin-top: 15px;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  background: #0b1629;
+  border-radius: 10px;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.results {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.result {
+  background: #0b1629;
+  padding: 16px;
+  border-radius: 9px;
+  overflow-wrap: anywhere;
+}
+
+.result strong {
+  display: block;
+  color: #38bdf8;
+  margin-top: 8px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.dot {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.blue { background: #38bdf8; }
+.orange { background: #fb923c; }
+.green { background: #22c55e; }
+
+.eigen {
+  padding: 12px 0;
+  border-bottom: 1px solid #334155;
+}
+
+small { color: #94a3b8; }
+label { cursor: pointer; }
+
+@media (max-width: 780px) {
+  .container {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>📐 Matrix Transformation Simulator</h1>
+  <div class="subtitle">
+    Which Directions Does a Matrix Prefer?
+  </div>
+  <small>Engineering Mathematics-III | Eigenvalues & Eigenvectors</small>
+</header>
+
+<div class="container">
+
+  <!-- LEFT PANEL -->
+  <div>
+
+    <div class="card">
+      <h2>Transformation Matrix A</h2>
+      <p class="subtitle">Enter any real 2 × 2 matrix</p>
+
+      <div class="matrix">
+        <input id="a" type="number" step="any" value="3">
+        <input id="b" type="number" step="any" value="0">
+        <input id="c" type="number" step="any" value="0">
+        <input id="d" type="number" step="any" value="2">
+      </div>
+
+      <button class="reset" onclick="resetAll()">
+        Reset Simulator
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>Original Vector</h2>
+
+      <div class="slider-label">
+        <span>X Coordinate</span>
+        <span id="xValue">1</span>
+      </div>
+      <input id="vx" type="range"
+             min="-5" max="5" step="0.1" value="1">
+
+      <div class="slider-label">
+        <span>Y Coordinate</span>
+        <span id="yValue">1</span>
+      </div>
+      <input id="vy" type="range"
+             min="-5" max="5" step="0.1" value="1">
+
+      <p><small>You can also drag the blue vector on the graph.</small></p>
+    </div>
+
+    <div class="card">
+      <h2>Try Transformations</h2>
+      <div class="buttons">
+        <button onclick="preset(3,0,0,2)">Stretch</button>
+        <button onclick="preset(0.5,0,0,2)">Compress</button>
+        <button onclick="preset(0,-1,1,0)">Rotate 90°</button>
+        <button onclick="preset(1,2,0,1)">Shear</button>
+        <button onclick="preset(-1,0,0,1)">Reflect</button>
+        <button onclick="preset(1,0,0,1)">Identity</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div>
+
+    <div class="card">
+      <h2>Live Matrix Transformation</h2>
+
+      <svg id="graph" viewBox="0 0 600 450">
+      </svg>
+
+      <div class="legend">
+        <span><i class="dot blue"></i>Original Vector</span>
+        <span><i class="dot orange"></i>Transformed Vector</span>
+        <span><i class="dot green"></i>Eigenvector Direction</span>
+      </div>
+
+      <p>
+        <label>
+          <input type="checkbox" id="gridToggle" checked>
+          Show Grid
+        </label>
+        &nbsp;&nbsp;
+        <label>
+          <input type="checkbox" id="eigenToggle" checked>
+          Show Eigenvectors
+        </label>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Vector Transformation Results</h2>
+      <div class="results">
+        <div class="result">
+          Original Vector
+          <strong id="original"></strong>
+        </div>
+        <div class="result">
+          Transformed Vector
+          <strong id="transformed"></strong>
+        </div>
+        <div class="result">
+          Determinant
+          <strong id="determinant"></strong>
+        </div>
+        <div class="result">
+          Trace
+          <strong id="trace"></strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Eigenvalues & Eigenvectors</h2>
+      <div id="eigenResults"></div>
+    </div>
+
+    <div class="card">
+      <h2>Mathematical Verification</h2>
+      <p>Eigenvector equation: <b>Av = λv</b></p>
+      <div id="verification"></div>
+    </div>
+
+    <div class="card">
+      <h2>Direction Analysis</h2>
+      <div id="analysis"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const graph = $("graph");
+const W = 600, H = 450;
+const CX = W / 2, CY = H / 2;
+
+let dragging = false;
+let graphScale = 40;
+
+function number(id) {
+  return Number($(id).value) || 0;
+}
+
+function fmt(n) {
+  if (Math.abs(n) < 1e-9) n = 0;
+  return Number(n.toFixed(3)).toString();
+}
+
+function eigenvector(a,b,c,d,lambda) {
+  let x = b;
+  let y = lambda - a;
+
+  if (Math.hypot(x,y) < 1e-8) {
+    x = lambda - d;
+    y = c;
+  }
+
+  if (Math.hypot(x,y) < 1e-8) {
+    x = 1;
+    y = 0;
+  }
+
+  const norm = Math.hypot(x,y);
+  return [x/norm,y/norm];
+}
+
+function matrixInfo(a,b,c,d) {
+  const trace = a+d;
+  const det = a*d-b*c;
+  const disc = trace*trace-4*det;
+
+  if (disc < -1e-9) {
+    return {
+      trace, det,
+      complex: true,
+      real: trace/2,
+      imaginary: Math.sqrt(-disc)/2,
+      eigs: []
+    };
+  }
+
+  const root = Math.sqrt(Math.max(0,disc));
+  const lambdas = [(trace+root)/2,(trace-root)/2];
+
+  const repeated = root < 1e-8;
+  const scalar = Math.abs(b)<1e-9 &&
+                 Math.abs(c)<1e-9 &&
+                 Math.abs(a-d)<1e-9;
+
+  let eigs;
+
+  if (scalar) {
+    eigs = [
+      {lambda:a, vector:[1,0]},
+      {lambda:a, vector:[0,1]}
+    ];
+  } else if (repeated) {
+    eigs = [{
+      lambda:lambdas[0],
+      vector:eigenvector(a,b,c,d,lambdas[0])
+    }];
+  } else {
+    eigs = lambdas.map(lambda => ({
+      lambda,
+      vector:eigenvector(a,b,c,d,lambda)
+    }));
+  }
+
+  return {trace,det,complex:false,eigs,repeated,scalar};
+}
+
+function line(x1,y1,x2,y2,color,width=1,dash="") {
+  return `<line x1="${x1}" y1="${y1}"
+    x2="${x2}" y2="${y2}"
+    stroke="${color}" stroke-width="${width}"
+    stroke-dasharray="${dash}" />`;
+}
+
+function vector(x,y,color,name) {
+  const ex=CX+x*graphScale;
+  const ey=CY-y*graphScale;
+
+  const len=Math.hypot(ex-CX,ey-CY);
+
+  if (len<0.001) {
+    return `<circle cx="${CX}" cy="${CY}" r="5"
+      fill="${color}" />`;
+  }
+
+  const angle=Math.atan2(ey-CY,ex-CX);
+  const arrow=12;
+
+  const p1x=ex-arrow*Math.cos(angle-0.45);
+  const p1y=ey-arrow*Math.sin(angle-0.45);
+  const p2x=ex-arrow*Math.cos(angle+0.45);
+  const p2y=ey-arrow*Math.sin(angle+0.45);
+
+  return `
+    ${line(CX,CY,ex,ey,color,3)}
+    <polygon points="${ex},${ey} ${p1x},${p1y} ${p2x},${p2y}"
+      fill="${color}" />
+    <text x="${ex+10}" y="${ey-9}" fill="${color}"
+      font-size="16" font-weight="bold">${name}</text>
+  `;
+}
+
+function update() {
+  const a=number("a"), b=number("b");
+  const c=number("c"), d=number("d");
+  const vx=number("vx"), vy=number("vy");
+
+  const tx=a*vx+b*vy;
+  const ty=c*vx+d*vy;
+
+  $("xValue").textContent=fmt(vx);
+  $("yValue").textContent=fmt(vy);
+
+  $("original").textContent=`(${fmt(vx)}, ${fmt(vy)})`;
+  $("transformed").textContent=`(${fmt(tx)}, ${fmt(ty)})`;
+
+  const info=matrixInfo(a,b,c,d);
+
+  $("trace").textContent=fmt(info.trace);
+  $("determinant").textContent=fmt(info.det);
+
+  const maxValue=Math.max(
+    4,Math.abs(vx),Math.abs(vy),
+    Math.abs(tx),Math.abs(ty)
+  );
+
+  graphScale=Math.min(40,185/maxValue);
+
+  let svg="";
+
+  if ($("gridToggle").checked) {
+    const step=graphScale < 12 ? 5 : graphScale < 25 ? 2 : 1;
+
+    for (let i=-50;i<=50;i+=step) {
+      const gx=CX+i*graphScale;
+      const gy=CY-i*graphScale;
+
+      if(gx>=0 && gx<=W)
+        svg+=line(gx,0,gx,H,"#243650");
+
+      if(gy>=0 && gy<=H)
+        svg+=line(0,gy,W,gy,"#243650");
+    }
+  }
+
+  svg+=line(0,CY,W,CY,"#94a3b8",1.5);
+  svg+=line(CX,0,CX,H,"#94a3b8",1.5);
+
+  svg+=`<text x="575" y="${CY-10}"
+    fill="#cbd5e1">X</text>`;
+  svg+=`<text x="${CX+10}" y="22"
+    fill="#cbd5e1">Y</text>`;
+
+  if ($("eigenToggle").checked) {
+    info.eigs.forEach((e,i)=>{
+      const [ex,ey]=e.vector;
+      const reach=700;
+
+      svg+=line(
+        CX-ex*reach,CY+ey*reach,
+        CX+ex*reach,CY-ey*reach,
+        "#22c55e",2,i===0?"8 6":"3 5"
+      );
+    });
+  }
+
+  svg+=vector(vx,vy,"#38bdf8","v");
+  svg+=vector(tx,ty,"#fb923c","Av");
+
+  svg+=`<circle cx="${CX}" cy="${CY}"
+    r="3" fill="white"/>`;
+
+  graph.innerHTML=svg;
+
+  updateDetails(a,b,c,d,info);
+}
+
+function updateDetails(a,b,c,d,info) {
+  const results=$("eigenResults");
+  const verify=$("verification");
+  const analysis=$("analysis");
+
+  if(info.complex) {
+    results.innerHTML=`
+      <div class="eigen">
+        λ₁ = ${fmt(info.real)} + ${fmt(info.imaginary)}i<br>
+        λ₂ = ${fmt(info.real)} - ${fmt(info.imaginary)}i
+      </div>
+      <p>No real eigenvector directions exist.</p>
+    `;
+
+    verify.textContent=
+      "Real 2D eigenvector verification is unavailable.";
+
+    analysis.textContent=
+      "This matrix has complex eigenvalues. " +
+      "It does not preserve any nonzero real vector direction.";
+
+    return;
+  }
+
+  results.innerHTML="";
+  verify.innerHTML="";
+  analysis.innerHTML="";
+
+  info.eigs.forEach((e,i)=>{
+    const [x,y]=e.vector;
+    const lambda=e.lambda;
+
+    results.innerHTML+=`
+      <div class="eigen">
+        <b>Eigenvalue ${i+1}: λ = ${fmt(lambda)}</b><br>
+        Eigenvector: (${fmt(x)}, ${fmt(y)})
+      </div>
+    `;
+
+    const leftX=a*x+b*y;
+    const leftY=c*x+d*y;
+
+    const rightX=lambda*x;
+    const rightY=lambda*y;
+
+    const verified=
+      Math.abs(leftX-rightX)<1e-7 &&
+      Math.abs(leftY-rightY)<1e-7;
+
+    verify.innerHTML+=`
+      <p>
+        <b>Eigenvector ${i+1}</b><br>
+        Av = (${fmt(leftX)}, ${fmt(leftY)})<br>
+        λv = (${fmt(rightX)}, ${fmt(rightY)})<br>
+        <span style="color:#22c55e">
+        ${verified?"✓ Verified":"Verification failed"}
+        </span>
+      </p>
+    `;
+
+    let effect;
+
+    if(Math.abs(lambda)>1.000001)
+      effect="Stretching";
+    else if(Math.abs(lambda)<0.999999)
+      effect="Compression";
+    else
+      effect="Length unchanged";
+
+    if(lambda<0)
+      effect+=" with direction reversal";
+
+    analysis.innerHTML+=`
+      <p><b>Direction ${i+1}:</b> ${effect}</p>
+    `;
+  });
+
+  if(info.repeated && !info.scalar) {
+    results.innerHTML+=
+      "<p>Repeated eigenvalue: only one independent eigenvector direction.</p>";
+  }
+
+  if(info.scalar) {
+    results.innerHTML+=
+      "<p>Every nonzero vector is an eigenvector of this matrix.</p>";
+  }
+}
+
+function preset(a,b,c,d) {
+  $("a").value=a;
+  $("b").value=b;
+  $("c").value=c;
+  $("d").value=d;
+  update();
+}
+
+function resetAll() {
+  preset(3,0,0,2);
+  $("vx").value=1;
+  $("vy").value=1;
+  $("gridToggle").checked=true;
+  $("eigenToggle").checked=true;
+  update();
+}
+
+// Allow dragging the vector directly on the graph.
+function setVectorFromPointer(event) {
+  const rect=graph.getBoundingClientRect();
+
+  const svgX=(event.clientX-rect.left)*W/rect.width;
+  const svgY=(event.clientY-rect.top)*H/rect.height;
+
+  const x=(svgX-CX)/graphScale;
+  const y=(CY-svgY)/graphScale;
+
+  const round=v=>Math.round(v*10)/10;
+
+  $("vx").value=Math.max(-5,Math.min(5,round(x)));
+  $("vy").value=Math.max(-5,Math.min(5,round(y)));
+
+  update();
+}
+
+graph.addEventListener("pointerdown",event=>{
+  dragging=true;
+  graph.setPointerCapture(event.pointerId);
+  setVectorFromPointer(event);
+});
+
+graph.addEventListener("pointermove",event=>{
+  if(dragging) setVectorFromPointer(event);
+});
+
+graph.addEventListener("pointerup",()=>dragging=false);
+graph.addEventListener("pointercancel",()=>dragging=false);
+
+document.querySelectorAll("input").forEach(input=>{
+  input.addEventListener("input",update);
+});
+
+update();
+</script>
+
+</body>
+</html>
